@@ -35,10 +35,9 @@ ClaudeSettings/
 │       ├── oracle-trigger/
 │       ├── oracle-ddl-script/
 │       └── oracle-plsql/
-├── sablonlar/
-│   ├── proje-settings.json              ← proje repolarına konacak .claude/settings.json
-│   └── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
-└── KAYNAKLAR.md                         ← uyarlanan açık kaynak projeler ve lisansları
+└── sablonlar/
+    ├── proje-settings.json              ← proje repolarına konacak .claude/settings.json
+    └── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
 ```
 
 ## Akış: `/gelistir`

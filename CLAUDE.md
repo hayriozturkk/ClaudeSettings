@@ -10,4 +10,5 @@ Bu repo bir Claude Code plugin marketplace'idir (`.claude-plugin/marketplace.jso
 - Agent'lar skill'leri `skills:` alanında `dotnet-oracle:<skill-adi>` olarak listeler. Skill adı değişirse agent'ları da güncelle.
 - Agent'lar ve komutlar görev klasörü (`.claude/gorevler/<ID>/`) dosya adlarına bağımlıdır: `task.md`, `analiz.md`, `kararlar.md`, `db-degisiklikleri.md`, `db-talepleri.md`, `degisiklikler.md`, `test-raporu.md`, `review.md`, `ozet.md`. Bir adı değiştirirsen tüm agent ve komutlarda değiştir.
 - Her yayında `plugins/dotnet-oracle/.claude-plugin/plugin.json` ve `.claude-plugin/marketplace.json` içindeki `version` birlikte artırılır.
-- Başka bir projeden içerik uyarlanırsa önce lisansı kontrol et (lisanssız içerik kopyalanmaz), sonra `KAYNAKLAR.md`'ye kaynak, commit, lisans ve kullanıldığı yeri ekle ve tam lisans metnini koy.
+- Başka projelerden yalnızca **fikir** alınır; metin, bölüm yapısı ve örnekler kopyalanmaz, çevrilmez veya yakın biçimde yeniden yazılmaz.
+  İçerik, kaynağa bakmadan, bu reponun yapısıyla (`/gelistir` adımları, görev klasörü dosyaları) ve C#/.NET + Oracle örnekleriyle sıfırdan yazılır.

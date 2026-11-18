@@ -1,73 +1,88 @@
 ---
 name: hata-ayiklama
-description: Sistematik hata ayıklama — önce kök neden, sonra düzeltme. Build hatası, başarısız test, exception, ORA hatası, yanlış sonuç veya performans sorunu ile karşılaşıldığında ve tester/reviewer bulgularını düzeltirken, düzeltme önermeden ÖNCE HER ZAMAN kullan.
+description: .NET + Oracle projelerinde hata ayıklama yöntemi — hatanın türüne göre ilk bakılacak yerler (build, test, exception, ORA hatası, yanlış sonuç, yavaşlık), sık görülen Oracle kaynaklı nedenler, kök neden bulunmadan düzeltme yapmama ve deneme sınırı. Build hatası, başarısız test, exception veya tester/reviewer'ın bildirdiği bir hatayı düzeltmeden önce HER ZAMAN kullan.
 ---
 
 # Hata ayıklama
 
-> Kaynak: Superpowers `systematic-debugging` ve `test-driven-development` skill'lerinden .NET + Oracle için uyarlanmıştır.
-> Lisans: depo kökündeki `KAYNAKLAR.md`.
+Bir hatayı düzeltmek, hatanın **neden** oluştuğunu açıklayabildikten sonra başlar.
+"Şu satırı değiştirince geçti" bir açıklama değildir. Açıklama şöyle olur: "Repository'de `BindByName` yoktu; parametreler sıraya göre bağlandığı için `:status` değeri `ID` kolonuna gitti."
 
-## Demir kural
+---
+
+## 1. Hata nereden geliyor? İlk bakılacak yerler
+
+| Hata türü | İlk bak | Sonra |
+|---|---|---|
+| **Build hatası** | Listedeki **ilk** hata. Sonrakiler çoğu zaman onun yan etkisidir. | Bu görevde değişen dosyalar (`git diff --stat`) |
+| **Test başarısız** | Testin beklediği ile aldığı değer; test mi yanlış kod mu? | Test bu görevde mi yazıldı, yoksa önceden var olup şimdi mi bozuldu? (`git diff` ile testin değişip değişmediğine bak) |
+| **Exception** | Stack trace'in tamamı ve `InnerException` zinciri | Exception'ın fırlatıldığı katman: Controller, Servis, Repository, Oracle |
+| **ORA-xxxxx** | `OracleException.Number` ve mesajdaki nesne adı | Bölüm 2'deki tablo |
+| **Yanlış sonuç** | Hangi girdiyle yanlış? Doğru sonuç ne olmalıydı? | Değeri katman katman izle (bölüm 3) |
+| **Yavaşlık** | Döngü içinde sorgu var mı (N+1), sorgu kaç satır getiriyor? | Sorgunun execution plan'ı, eksik index |
+
+---
+
+## 2. Oracle kaynaklı sık nedenler
+
+Bir Oracle veya veri erişimi hatasında önce bu listeyi kontrol et:
+
+| Belirti | Muhtemel neden | Bakılacak yer |
+|---|---|---|
+| Değerler yanlış kolonlara gidiyor, tip hatası | `OracleCommand.BindByName = true` eksik | ADO.NET kullanan repository |
+| ORA-01400 (NULL eklenemez) ama C#'ta değer `""` | Oracle'da boş string NULL'dur | Validasyon ve kolonun NULL kuralı |
+| ORA-12899 (değer çok büyük), Türkçe karakterli metinde | Kolon `VARCHAR2(n BYTE)` | DDL: `VARCHAR2(n CHAR)` olmalı |
+| ORA-04091 (tablo değişiyor) | Satır seviyesi trigger aynı tabloyu okuyor | Trigger → compound trigger'a çevir |
+| ORA-00942 / ORA-00904 (tablo/kolon yok) | İsim büyük/küçük harf farkı, eksik şema öneki veya script çalıştırılmamış | EF Core eşlemesi, `db-degisiklikleri.md` çalıştırma sırası |
+| `InvalidCastException` okurken | `NUMBER` hassasiyeti ile C# tipi uyuşmuyor | `dotnet-veri-erisimi` tip eşleme tablosu |
+| ORA-00001 testte rastgele çıkıyor | Testler aynı veriyi paylaşıyor veya temizlemiyor | Test verisi oluşturma/temizleme |
+| ORA-01795 | `IN` listesinde 1000'den fazla eleman | Listeyi parçala |
+
+---
+
+## 3. Değeri katman katman izle
+
+Yanlış sonuç veya beklenmeyen exception için hatanın **hangi katmanda** başladığını bul:
+
 ```
-KÖK NEDEN BULUNMADAN DÜZELTME YOK
+İstek (DTO) ──► Controller ──► Servis ──► Repository ──► SQL / Oracle ──► sonuç ──► mapping ──► yanıt
 ```
-Belirtiyi bastıran düzeltme (null kontrolü ekleyip geçmek, exception'ı yakalayıp yutmak, testi gevşetmek) düzeltme değildir.
 
-## 1. Aşama — Kök nedeni araştır
-1. **Hata mesajını tamamen oku.** Stack trace'i sonuna kadar oku; dosya, satır, ORA kodu, inner exception.
-   - `OracleException.Number` → ORA kodu (bkz. `dotnet-hata-ve-loglama` tablosu).
-   - EF Core hatalarında `InnerException` çoğu zaman asıl Oracle hatasıdır.
-   - Build hatasında **ilk** hatadan başla; sonrakiler genelde onun sonucudur.
-2. **Tekrar üret.** Hata her seferinde oluşuyor mu? Hangi girdiyle? Tekrar üretemiyorsan tahmin etme, veri topla.
-3. **Son değişikliklere bak.** `git diff`, `git log -5`. Bu görevde ne değişti? Hata ondan önce var mıydı?
-4. **Katmanlar arasında kanıt topla.** Controller → Servis → Repository → Oracle zincirinde değerin nerede bozulduğunu bul:
-   her sınırda giren ve çıkan değeri kontrol et (debug log, test içinde ara assert). Önce **hangi katmanın** bozuk olduğunu bul, sonra o katmanı incele.
-5. **Veriyi geriye doğru izle.** Hatalı değer nereden geldi? Onu kim çağırdı? Kaynağa kadar git; düzeltmeyi belirtide değil kaynakta yap.
+- Her ok bir sınırdır. Değerin bir sınırdan doğru girip yanlış çıktığı ilk yeri bul; sorun oradadır.
+- Kontrol için geçici log veya test içi ara assertion kullanabilirsin; düzeltmeden sonra geçici logları kaldır.
+- Hatalı değeri bulduğunda "bu değer buraya nereden geldi?" diye geriye git. Düzeltmeyi değerin bozulduğu yerde yap;
+  bozuk değerin sonradan kullanıldığı yerde yama yapma.
+- Bu görevin öncesinde çalışan benzer bir akış varsa (başka bir endpoint, başka bir repository metodu) onu bozuk olanla yan yana koy;
+  aradaki her farkı yaz.
 
-## 2. Aşama — Desen karşılaştır
-- Aynı projede **çalışan** benzer bir kod bul (benzer endpoint, benzer repository sorgusu, benzer trigger).
-- Çalışan ile bozuk arasındaki tüm farkları listele; "bu önemli olamaz" deme.
-- Oracle'a özgü sık nedenleri kontrol et:
-  - `BindByName` eksik → parametreler sıraya göre bağlanıp yanlış kolona gidiyor
-  - Boş string NULL'a dönüşüyor → `NOT NULL` ihlali (ORA-01400) veya eşleşmeyen `WHERE`
-  - `VARCHAR2(n)` byte semantiği → Türkçe karakterle ORA-12899
-  - Satır seviyesi trigger'da aynı tabloyu okumak → ORA-04091 (mutating)
-  - `NUMBER` ↔ C# tip uyuşmazlığı → `InvalidCastException`
-  - Büyük/küçük harf: tırnaklı tanımlayıcı veya EF Core'un ürettiği isim ile tablodaki isim farkı → ORA-00942 / ORA-00904
+---
 
-## 3. Aşama — Tek hipotez, en küçük deneme
-- Hipotezi yaz: "Kök neden X, çünkü Y."
-- Hipotezi test eden **en küçük** değişikliği yap; aynı anda tek değişken.
-- Tutmadıysa yeni hipotez kur; başarısız denemenin üstüne yeni düzeltme ekleme, önce geri al.
-- Bilmiyorsan "X'i anlamıyorum" de; uydurma.
+## 4. Düzeltme kuralları
 
-## 4. Aşama — Düzelt ve kanıtla
-1. **Önce başarısız test.** Hatayı tekrar üreten en küçük testi yaz ve **başarısız olduğunu gör** (kırmızı).
-   Test projesi yoksa, tekrar üretme adımlarını `degisiklikler.md`'ye yaz.
-   tester agent hatayı zaten başarısız bir testle raporladıysa o testi kullan.
-2. **Tek düzeltme.** Kök nedeni düzelt. "Hazır buradayken" iyileştirme yok.
-3. **Doğrula.** Başarısız test artık geçiyor mu (yeşil)? Diğer testler hâlâ geçiyor mu? `dotnet build` temiz mi?
-4. **Tutmadıysa dur ve say.** Kaçıncı düzeltme denemesi?
-   - 3'ten az: 1. aşamaya dön, yeni bilgiyle yeniden analiz et.
-   - **3 veya daha fazla:** Dur. Bu çoğu zaman yanlış bir tasarımın işaretidir (her düzeltme başka yerde yeni sorun çıkarıyorsa).
-     Daha fazla deneme yapma; durumu ve denenenleri ana oturuma dön, kullanıcıyla tasarım konuşulsun.
+1. **Neden yazılı olmadan kod değişmez.** Kök nedeni bir cümleyle `degisiklikler.md` → "Kök neden" bölümüne yaz.
+2. **Önce hatayı yakalayan test.** Test projesi varsa hatayı gösteren testi yaz (veya tester'ın yazdığını kullan) ve kırmızı olduğunu gör.
+   Test projesi yoksa hatayı tekrar üretme adımlarını yaz.
+3. **Tek seferde tek değişiklik.** Birden fazla şeyi aynı anda değiştirirsen hangisinin işe yaradığını bilemezsin.
+4. **İşe yaramayan değişikliği geri al**, sonra yeni bir neden düşün. Başarısız denemelerin üstüne yenisini ekleme.
+5. **Belirtiyi bastırmak düzeltme değildir:** exception'ı yakalayıp yutmak, `?? default` ile geçiştirmek, testi gevşetmek, `[Skip]` eklemek yasak.
+6. **Doğrula:** Kırmızı test yeşil oldu mu, diğer testler hâlâ geçiyor mu, `dotnet build` temiz mi? (bkz. `calisma-ilkeleri` C)
 
-## Kırmızı bayraklar — bunları düşünüyorsan 1. aşamaya dön
-- "Şimdilik hızlı bir düzeltme, sonra incelerim"
-- "Şunu değiştirip bakayım"
-- "Birkaç değişikliği birden yapıp testi çalıştırayım"
-- "Testi atlayayım, elle kontrol ederim"
-- "Muhtemelen X'tir, düzelteyim"
-- "Bir deneme daha" (2 denemeden sonra)
+### Deneme sınırı
+Aynı hata için yaptığın düzeltme denemelerini say.
+- **1-2. deneme tutmadıysa:** Bölüm 1'e dön; elindeki yeni bilgiyle nedeni yeniden düşün.
+- **3. deneme de tutmadıysa: dur.** Her düzeltmenin başka bir yerde yeni sorun çıkarması genelde tasarımın kendisinde bir sorun olduğunu gösterir.
+  Daha fazla deneme yapma. Ana oturuma şunları dön: hata, denediğin üç neden ve sonuçları, tasarımla ilgili şüphen. Kullanıcı karar verir.
+
+---
 
 ## Kontrol listesi
 Zorunlu:
-- [ ] Düzeltme, belirtiyi değil yazılı bir kök nedeni hedefliyor
-- [ ] Hata yutularak, test gevşetilerek veya `catch` ile bastırılarak "düzeltilmedi"
-- [ ] Hatayı tekrar üreten test önce kırmızı, düzeltmeden sonra yeşil (test projesi varsa)
-- [ ] 3 başarısız denemeden sonra durulup kullanıcıya dönüldü
+- [ ] Kök neden `degisiklikler.md`'de bir cümleyle yazılı
+- [ ] Hata yutularak, `catch` ile bastırılarak, test gevşetilerek veya atlanarak "çözülmedi"
+- [ ] Test projesi varsa hatayı gösteren test önce kırmızı, sonra yeşil
+- [ ] Üç başarısız denemeden sonra durulup ana oturuma dönüldü
 
 Tavsiye:
-- [ ] Kök neden ve denenen hipotezler `degisiklikler.md`'ye yazıldı
-- [ ] Aynı hatanın tekrarını önlemek için gereken yerde validasyon eklendi
+- [ ] Düzeltme, değerin bozulduğu katmanda yapılmış
+- [ ] Geçici log ve debug kodu temizlenmiş
+- [ ] Aynı hatanın tekrarını önleyecek validasyon gerekiyorsa eklenmiş

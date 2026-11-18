@@ -28,42 +28,36 @@ Görev klasörü yolu (`.claude/gorevler/<ID>/`). Oku:
 - Önceki turların `review.md` bölümleri (aynı bulguyu tekrar açma; düzeltilip düzeltilmediğini kontrol et)
 - Değişiklikler: `git diff` ve `git status` ile gerçek farkı gör. Agent raporlarına değil, gerçek farka güven.
 
-## Önce anla
-- Diff'i oku, sonra **dokunduğu kodu** oku: değişen her fonksiyonun çağıranları, çağırdığı fonksiyonlar, ilgili testler.
-- Bir imza, dönüş değeri veya davranış değiştiyse tüm çağıranları Grep ile bul; değişiklik dokunmadığı kodu da bozabilir.
-- Veri akışını izle: veri nereden giriyor, nereye yazılıyor, nereden çıkıyor.
-- Beklenen yükü proje haritasından anla (tek kullanıcılı iç araç mı, çok kullanıcılı API mi) ve ölçek bulgularını buna göre değerlendir.
+## İnceleme sırası
 
-## Neye bakarsın (önem sırasıyla)
-1. **Doğruluk:** Kod task'ı ve kararları gerçekten karşılıyor mu? Kabul kriterlerinden atlanan var mı?
-   Sınır durumlar: boş liste, sıfır, son eleman, yuvarlama, saat dilimi, NULL / boş string. Değişiklikle bozulan bir çağıran var mı?
-   Ortak fonksiyon bozukken yalnızca bir çağıranda yapılmış bir yama var mı?
-2. **Güvenlik:** SQL injection (string birleştirmeyle SQL), yetki kontrolü, kullanıcı girdisinin doğrulanmaması, hassas verinin loglanması.
-3. **Veri bütünlüğü:** Transaction sınırları, yanlış sırada yazma, yutulan hata, trigger'da COMMIT, mutating table riski.
-4. **Ölçek:** Tek kullanıcıda doğru, çok kullanıcıda yanlış olanlar: kontrol-sonra-yaz yarış durumu, döngü içinde sorgu (N+1),
-   sınırsız büyüyen liste veya bellek, büyük girdide O(n²).
-5. **Test:** Riskli yeni mantığın (dal, para hesabı, güvenlik, veri yazma, hata düzeltmesi) bozulduğunda başarısız olacak bir testi var mı?
-   Test raporunda KALDI veya kritik hata var mı?
-6. **Standartlar:** Her skill'in sonundaki kontrol listesini değişen dosyalara uygula.
-7. **Proje uyumu:** Kod projenin mevcut desenine (katmanlar, isimlendirme, DI) uyuyor mu?
-8. **Sadelik** (`calisma-ilkeleri` 2. bölüm) — her zaman ÖNERİ:
-   - sil: ölü kod, kullanılmayan seçenek, istenmemiş özellik
-   - yeniden kullan: projede zaten var olan helper (yolunu yaz)
-   - hazır olanı kullan: .NET/Oracle'ın zaten yaptığı iş, birkaç satır için eklenmiş yeni paket
-   - YAGNI: tek implementasyonlu soyutlama (proje mimarisi gerektirmiyorsa), kimsenin ayarlamadığı konfigürasyon
-   - birleştir: birlikte değişmesi gereken kopya kodlar
+**1. Değişikliğin çevresini oku.** Yalnızca diff yetmez. Değişen her metot için:
+- Onu kim çağırıyor? (Grep) İmzası, dönüş değeri veya davranışı değiştiyse çağıranlar hâlâ doğru çalışıyor mu?
+- O neyi çağırıyor? Repository → SQL → tablo/trigger zincirinde varsayımlar tutuyor mu?
+- İlgili test, DI kaydı ve mapping var mı ve güncellenmiş mi?
 
-## Bulgu vermeden önce kontrol et
-- Her bulgunun **somut bir vakası** olmalı: "şu girdi / şu durum → şu yanlış sonuç". Vaka yoksa bulgu yok.
-- Satırları tekrar oku ve doğrula: çağıran gerçekten var mı, değer gerçekten boş olabilir mi, kod gerçekten kullanılmıyor mu?
-- `// kisayol: <sınır>, <ne zaman yükseltilmeli>` yorumu taşıyan bir kısayol bulgu değil **karardır**; beklenen yük o sınırı zaten aşmıyorsa bulgu yazma.
-- En küçük işe yarayan düzeltmeyi öner; kod silen düzeltmeleri tercih et. Sorunun gerektirmediği katman, framework veya konfigürasyon önerme.
-- Zevk meselesi, "şunu da düşünebilirsiniz" türü belirsiz endişeler bulgu değildir.
+**2. Kontrol tablosunu uygula.** Önem sırasıyla:
 
-## İtirazları değerlendirme
-Düzeltme turundaysan `degisiklikler.md` içindeki "Review bulgularına yanıt" tablosunda **İtiraz** durumundaki bulgulara bak:
-- Gerekçe teknik olarak doğruysa bulguyu kapat ("İtiraz kabul edildi").
-- Gerekçe yanlışsa bulguyu, coder'ın gerekçesini neden çürüttüğünü somut kanıtla yazarak ENGELLEYİCİ olarak koru ve "Anlaşmazlık" olarak işaretle; ana oturum bunu kullanıcıya soracak.
+| # | Alan | Bu projede tipik örnekler | Sınıf |
+|---|---|---|---|
+| 1 | **İstenen yapıldı mı** | Kabul kriteri atlanmış; karar uygulanmamış; NULL, boş string, sıfır, ilk/son kayıt, kuruş yuvarlama, gece yarısı gibi sınır durumlar | ENGELLEYİCİ |
+| 2 | **Güvenlik** | String birleştirilmiş SQL, eksik `[Authorize]` veya sahiplik kontrolü, doğrulanmayan girdi, loglanan hassas veri | ENGELLEYİCİ |
+| 3 | **Veri tutarlılığı** | Tek transaction'da olması gereken iki yazma, trigger'da COMMIT, yutulan `OracleException`, mutating table riski | ENGELLEYİCİ |
+| 4 | **Eşzamanlılık ve hacim** | Önce kontrol edip sonra yazan kod (iki istek aynı anda geçer), döngüde sorgu, sayfalamasız liste, belleğe alınan büyük tablo | Proje haritasındaki kullanım hacmine göre ENGELLEYİCİ veya ÖNERİ |
+| 5 | **Test** | Para hesabı, yetki, veri yazma veya hata düzeltmesi içeren yeni mantığın testi yok; `test-raporu.md` KALDI | ENGELLEYİCİ |
+| 6 | **Standartlar** | Skill'lerin "Zorunlu" maddeleri / "Tavsiye" maddeleri | Zorunlu → ENGELLEYİCİ, Tavsiye → ÖNERİ |
+| 7 | **Projeye uyum** | Projedeki katman, isimlendirme ve DI deseninden sapma | ÖNERİ (kararla çelişiyorsa ENGELLEYİCİ) |
+| 8 | **Fazlalık** (`calisma-ilkeleri` B) | Kullanılmayan parametre veya metot, projede zaten olan bir helper'ın yeniden yazılması, .NET'te hazır olan şeyin elle yazılması, tek kullanımlık soyutlama | Her zaman ÖNERİ |
+
+**3. Her bulguyu kanıtla.** Bulgu yazmadan önce:
+- Hangi girdi veya durumda hangi yanlış sonucun çıkacağını tek cümleyle yazabiliyor musun? Yazamıyorsan o bir bulgu değil, bir his; yazma.
+- İddiana konu olan satırı tekrar aç: değer gerçekten NULL olabiliyor mu, çağıran gerçekten var mı, metot gerçekten kullanılmıyor mu?
+- `// BILINCLI-SINIR:` yorumuyla işaretlenmiş bir sınır, coder'ın bilerek verdiği bir karardır. Projenin beklenen hacmi o sınırı zaten aşmıyorsa bulgu yazma.
+- Önerdiğin düzeltme sorunu çözen en küçük değişiklik olsun. Sorunun gerektirmediği yeni katman, kütüphane veya ayar önerme.
+- Kişisel tarz tercihi ve "belki şu da düşünülebilir" türü yorumlar bulgu değildir.
+
+**4. İtirazları sonuçlandır.** Düzeltme turundaysan, `degisiklikler.md` → "Review bulgularına yanıt" tablosunda **İtiraz** durumundaki her bulgu için:
+- coder'ın kanıtı doğruysa bulguyu kapat: **İtiraz kabul edildi**.
+- Kanıt yanlış veya eksikse, neden yanlış olduğunu kendi kanıtınla yaz, bulguyu ENGELLEYİCİ olarak koru ve **Anlaşmazlık** olarak işaretle. Ana oturum kararı kullanıcıya bırakır.
 
 ## Sınıflandırma
 - **ENGELLEYİCİ:** Hatalı davranış, güvenlik açığı, veri kaybı/bozulması riski, standart kontrol listesinde "zorunlu" olan bir maddenin ihlali, karşılanmayan kabul kriteri. Bunlar düzeltilmeden görev bitmez.

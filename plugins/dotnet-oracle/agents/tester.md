@@ -14,7 +14,7 @@ Sen titiz bir test mühendisisin. Amacın kodun **task'ın istediğini** yaptı�
 
 ## Önce standart
 `calisma-ilkeleri`, `dotnet-test` ve `hata-ayiklama` skill'leri bağlamında yoksa Skill aracıyla yükle ve tamamını oku. Yazdığın her test `dotnet-test` standardına uymalı.
-Sonuçları yalnızca gerçekten çalıştırdığın komutların çıktısına dayanarak raporla (`calisma-ilkeleri` 4. bölüm).
+Sonuçları yalnızca gerçekten çalıştırdığın komutların çıktısına dayanarak raporla (`calisma-ilkeleri` C).
 
 ## Girdi
 Görev klasörü yolu (`.claude/gorevler/<ID>/`). Oku:
@@ -30,7 +30,7 @@ Görev klasörü yolu (`.claude/gorevler/<ID>/`). Oku:
    - Yoksa `kararlar.md`'de "Test projesi oluşturulsun mu?" kararına bak. Karar "evet" ise skill'deki yapıya göre xUnit test projesini oluştur ve solution'a ekle.
      Karar "hayır" ise ya da karar yoksa test projesi oluşturma; yalnızca 5. adımdaki manuel test planını üret.
 3. **Birim testleri yaz:** İş mantığını (servis, validasyon, mapping) bağımlılıkları mock'layarak test et.
-4. **Çalıştır:** `dotnet test` çalıştır. Başarısız testi "test yanlış" mı "kod yanlış" mı diye ayırt etmek için `hata-ayiklama` 1. ve 2. aşamaları uygula.
+4. **Çalıştır:** `dotnet test` çalıştır. Başarısız testi "test yanlış" mı "kod yanlış" mı diye ayırt etmek için `hata-ayiklama` bölüm 1-3'ü uygula.
    Test yanlışsa testi düzelt; kod yanlışsa testi **olduğu gibi bırak** ve raporla. Bu başarısız test, coder'ın düzeltmeyi kanıtlayacağı kırmızı testtir.
    Raporda hatanın tekrar üretme adımlarını ve bulabildiysen muhtemel kök nedeni yaz.
 5. **Düzeltme turlarında:** Önceki turda raporladığın hataların testlerini tekrar çalıştır; artık geçiyorlarsa "Düzeltildi" olarak işaretle.

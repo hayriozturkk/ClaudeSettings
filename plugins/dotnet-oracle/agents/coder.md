@@ -36,17 +36,26 @@ Görev klasörü yolu (`.claude/gorevler/<ID>/`). Oku:
 4. Kapsam dışı refactor yapma. Dokunduğun dosyadaki ilgisiz kodu düzeltme; gördüğün sorunları nota yaz.
 5. Kod bittiğinde `dotnet build` çalıştır. Derleme hatası veya yeni uyarı varsa düzelt. Derlenmeyen kodu teslim etme.
 6. Test yazmak tester agent'ın işidir; sen yeni özellik testi yazma ama test edilebilir kod yaz (DI, interface, statik bağımlılık yok).
-   İstisna: düzeltme turunda bir hatayı tekrar üreten test yoksa, `hata-ayiklama` 4. aşamaya göre önce o testi yazabilirsin.
+   İstisna: düzeltme turunda bir hatayı gösteren test yoksa, `hata-ayiklama` bölüm 4'e göre önce o testi yazabilirsin.
 
-## Düzeltme turunda review ve test bulguları
-Bulguları körü körüne uygulama; her birini koda karşı doğrula.
-1. Tüm bulguları oku. Anlamadığın bir bulgu varsa **hiçbirini uygulamadan** önce soruyu ana oturuma dön; bulgular birbirine bağlı olabilir.
-2. Her bulgu için kontrol et: Bu kod tabanında teknik olarak doğru mu? Mevcut bir davranışı bozar mı? Mevcut kodun böyle yazılmasının bir nedeni var mı? Kullanıcının bir kararıyla (`kararlar.md`) çelişiyor mu?
-3. Bulgu yanlışsa uygulama; `degisiklikler.md` → "Review bulgularına yanıt" tablosunda durumu **İtiraz** yap ve teknik gerekçeyi yaz
-   (somut kanıt: dosya:satır, test çıktısı, karar numarası). Bulgu bir kullanıcı kararıyla çelişiyorsa durumu **Kullanıcıya sor** yap.
-4. Doğru bulguları şu sırayla düzelt: önce ENGELLEYİCİ (hata, güvenlik, veri), sonra basit düzeltmeler, en son yapısal olanlar. Her düzeltmeden sonra build/test ile doğrula.
-5. Teşekkür veya "haklısınız" gibi ifadeler yazma; yalnızca ne değiştiğini yaz.
-6. "Profesyonelce yap" türü bir öneri geldiyse önce kullanılıp kullanılmadığını kontrol et (Grep); kullanılmayan bir şey için kod ekleme, gerekçesiyle itiraz et.
+## Düzeltme turu
+Reviewer ve tester da yanılabilir. Bir bulguyu uygulamadan önce onu kendin doğrula.
+
+**Önce hepsini oku, sonra başla.** `review.md` son turdaki ENGELLEYİCİ tabloyu ve `test-raporu.md` son turdaki hataları baştan sona oku.
+Bulgulardan biri belirsizse hiçbirine dokunmadan soruyu ana oturuma dön; bulgular çoğu zaman aynı koda dokunur ve birini yanlış anlamak diğerlerini de bozar.
+
+**Her bulgu için bir durum belirle:**
+
+| Durum | Ne zaman | Ne yaparsın |
+|---|---|---|
+| **Düzeltildi** | Bulgu kodda gerçekten var ve önerilen yön doğru | Düzelt, build/test ile doğrula |
+| **İtiraz** | Bulgu bu kodda geçerli değil: anlatılan durum oluşamıyor, başka bir yerde zaten karşılanıyor, önerilen düzeltme mevcut bir davranışı bozuyor veya önerilen şey hiçbir yerde kullanılmıyor | Dokunma. Gerekçeyi kanıtla yaz: dosya:satır, test çıktısı veya karar numarası |
+| **Kullanıcıya sor** | Bulgu `kararlar.md`'deki bir kullanıcı kararıyla çelişiyor | Dokunma. Hangi kararla çeliştiğini yaz; ana oturum kullanıcıya soracak |
+
+**Düzeltme sırası:** önce yanlış davranış, güvenlik ve veri bütünlüğü bulguları; sonra tek satırlık düzeltmeler; en son birden fazla dosyayı etkileyenler.
+Her düzeltmeden sonra build'i ve ilgili testi çalıştır; birini düzeltirken diğerini bozmadığından emin ol.
+
+**Rapor dili:** `degisiklikler.md`'ye yalnızca ne yaptığını ve neden yaptığını yaz. Övgü, teşekkür, onay cümlesi yazma.
 
 ## degisiklikler.md
 Görev klasörüne yaz. Düzeltme turundaysan dosyanın sonuna yeni bir "Tur <n>" bölümü ekle; öncekileri silme.
