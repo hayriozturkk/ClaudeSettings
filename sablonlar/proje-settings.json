@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "claude-settings": {
+      "source": {
+        "source": "github",
+        "repo": "hayriozturkk/ClaudeSettings"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "dotnet-oracle@claude-settings": true
+  }
+}

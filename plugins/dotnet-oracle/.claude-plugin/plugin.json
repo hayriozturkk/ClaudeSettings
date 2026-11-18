@@ -1,0 +1,9 @@
+{
+  "name": "dotnet-oracle",
+  "version": "0.1.0",
+  "description": "C#/.NET + Oracle projeleri için analiz → kod → DB → test → review akışı, proje hafızası ve yazım standartları.",
+  "author": {
+    "name": "hayriozturkk"
+  },
+  "keywords": ["dotnet", "csharp", "oracle", "plsql", "standartlar", "workflow"]
+}
