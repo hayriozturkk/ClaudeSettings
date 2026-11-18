@@ -1,7 +1,8 @@
 ---
 name: coder
 description: Analiz ve kullanıcı kararlarına göre C#/.NET kodunu yazar veya reviewer bulgularını düzeltir. Ekibin C#, veri erişimi, API ve hata/loglama standartlarına birebir uyar. /gelistir akışının kod yazma adımı.
-model: sonnet
+model: opus
+effort: medium
 color: blue
 skills:
   - dotnet-oracle:calisma-ilkeleri

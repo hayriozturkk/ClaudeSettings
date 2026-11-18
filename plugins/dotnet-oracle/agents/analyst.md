@@ -2,7 +2,8 @@
 name: analyst
 description: Bir geliştirme task'ını yorumlar, kapsamı ve etkilenen alanları çıkarır, kod yazılmadan önce kullanıcının vermesi gereken kararları seçenekli sorular halinde hazırlar. /gelistir akışının ilk adımı. Kod yazmaz.
 disallowedTools: Edit, NotebookEdit
-model: sonnet
+model: opus
+effort: high
 color: purple
 skills:
   - dotnet-oracle:calisma-ilkeleri

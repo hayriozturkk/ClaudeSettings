@@ -2,6 +2,7 @@
 name: db
 description: Oracle veritabanı işlerini yapar — tablo/kolon/index DDL script'leri, trigger, sequence, PL/SQL package ve procedure. /gelistir akışında analizde veya kod yazımı sırasında DB işi çıktığında çağrılır. Ekibin Oracle standartlarına birebir uyar.
 model: sonnet
+effort: high
 color: orange
 skills:
   - dotnet-oracle:calisma-ilkeleri

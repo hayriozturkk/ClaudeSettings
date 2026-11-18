@@ -2,6 +2,7 @@
 name: tester
 description: Yazılan kodu task'taki kabul kriterlerine ve kullanıcı kararlarına göre test eder; xUnit testleri yazar ve çalıştırır, otomatik test edilemeyen kısımlar için manuel test adımları ve SQL kontrol sorguları üretir. /gelistir akışında kod yazıldıktan sonra çalışır.
 model: sonnet
+effort: medium
 color: green
 skills:
   - dotnet-oracle:calisma-ilkeleri

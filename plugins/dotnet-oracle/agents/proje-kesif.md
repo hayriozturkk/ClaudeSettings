@@ -2,6 +2,7 @@
 name: proje-kesif
 description: Bir C#/.NET + Oracle projesini tarayıp kalıcı proje haritasını (.claude/proje/) çıkarır veya son taramadan bu yana değişen kısımları günceller. /proje-ogren ve /proje-guncelle komutları kullanır.
 model: sonnet
+effort: medium
 color: cyan
 ---
 

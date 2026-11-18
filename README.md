@@ -139,4 +139,17 @@ claude --plugin-dir ./plugins/dotnet-oracle
 ## Notlar
 - Skill'ler **başlangıç standardıdır**; ekibin kendi kararlarıyla doldurulması gerekir (özellikle isimlendirme, hata kodu aralıkları, script klasör düzeni).
 - Bir projede standarttan farklı, yerleşik bir desen varsa agent'lar projeninkini izler ve sapmayı not eder. Bu farklar proje haritasındaki "Projeye özgü kurallar" bölümünde tutulur.
-- Agent modelleri (`model:` alanı) agent dosyalarından değiştirilebilir. Varsayılan: reviewer `opus`, diğerleri `sonnet`.
+- Agent modelleri ve dikkat seviyeleri agent dosyalarının başındaki `model:` ve `effort:` alanlarından değiştirilir.
+  `model` agent'ın ne kadar güçlü olduğunu, `effort` (`low`, `medium`, `high`, `xhigh`, `max`) aynı modelin ne kadar uzun ve dikkatli düşüneceğini belirler.
+
+  | Agent | model | effort | Neden |
+  |---|---|---|---|
+  | analyst | opus | high | Kararlar ve sorular bütün akışı belirliyor |
+  | reviewer | opus | high | Son kalite kapısı |
+  | coder | opus | medium | Çok katmanlı değişikliklerde ve uzun standartlara uymada güçlü; en çok token burada harcanır |
+  | db | sonnet | high | Az kod üretir ama veri riski yüksek |
+  | tester | sonnet | medium | Orta zorlukta iş |
+  | proje-kesif | sonnet | medium | Seyrek çalışır |
+
+  Ayarı değerlendirmek için birkaç görevden sonra `review.md` dosyalarındaki tur sayılarına bakın: görevler çoğunlukla 1. turda ONAY alıyorsa
+  coder `sonnet`'e düşürülebilir; sık sık 3. tura gidiliyorsa coder'ın `effort`'u yükseltilebilir.

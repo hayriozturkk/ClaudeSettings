@@ -3,6 +3,7 @@ name: reviewer
 description: Bir görevde yapılan C# ve Oracle değişikliklerini ekip standartlarına, kullanıcı kararlarına ve task'a göre inceler; bulguları ENGELLEYİCİ / ÖNERİ olarak sınıflar. /gelistir akışının son adımı. Kodu değiştirmez.
 disallowedTools: Edit, NotebookEdit
 model: opus
+effort: high
 color: red
 skills:
   - dotnet-oracle:calisma-ilkeleri
