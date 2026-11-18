@@ -1,5 +1,8 @@
 {
-  "description": "dotnet-oracle agent'ları başladığında ve bittiğinde görev klasörüne durum kaydı yazar (agentlar.jsonl, agentlar.json). Model token'ı harcamaz.",
+  "description": "dotnet-oracle agent'ları başladığında ve bittiğinde görev klasörüne durum kaydı yazar (agentlar.jsonl, agentlar.json). Ayrıca görev panelini (panel/panel.tsx) yükler. Model token'ı harcamaz.",
+  "modules": [
+    "../panel/panel.tsx"
+  ],
   "hooks": {
     "PreToolUse": [
       {

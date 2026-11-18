@@ -20,8 +20,13 @@ ClaudeSettings/
 │   │   ├── ajan-ayarlari.md             ← /ajan-ayarlari: agent modellerini kendin seç
 │   │   └── durum.md                     ← /durum: görev hangi adımda, hangi agent çalışıyor
 │   ├── hooks/
-│   │   ├── hooks.json                   ← agent başlayınca/bitince durum kaydı
+│   │   ├── hooks.json                   ← agent başlayınca/bitince durum kaydı + görev panelini yükler
 │   │   └── durum.mjs                    ← kaydı yazan script (Node.js, model token'ı harcamaz)
+│   ├── panel/
+│   │   ├── panel.tsx                    ← görev paneli: sohbetin yanında canlı durum ve model seçimi
+│   │   ├── panel.test.tsx               ← panel testleri (claude plugin test)
+│   │   └── ornek-gorev.mjs              ← paneli denemek için örnek görev oluşturur
+│   ├── types/index.d.ts                 ← panelin tuttuğu değerlerin tipleri
 │   ├── agents/
 │   │   ├── analyst.md                   ← task'ı yorumlar, karar sorularını çıkarır
 │   │   ├── db.md                        ← Oracle: DDL, trigger, PL/SQL
@@ -135,8 +140,44 @@ görevler çoğunlukla 1. turda ONAY alıyorsa coder `sonnet`'e düşürülebili
 ## Durum takibi: `/durum`
 
 `/durum` aktif görevin hangi adımda olduğunu, şu an hangi agent'ın hangi modelle çalıştığını ve her agent'ın harcadığı token'ı gösterir.
-Bilgiler görev klasöründeki `adim.json` ve `agentlar.json` dosyalarından okunur; ileride Claude Code'da sohbetin yanında duran bir panel de aynı dosyaları okuyabilir.
+Bilgiler görev klasöründeki `adim.json` ve `agentlar.json` dosyalarından okunur; aynı bilgileri sohbetin yanında canlı gösteren **görev paneli** aşağıda.
 Agent kayıtlarını plugin'in hook'u tutar ve model token'ı harcamaz.
+
+## Görev paneli
+
+Sohbetin yanında duran, kendiliğinden güncellenen bir panel. Plugin'in parçasıdır; ayrıca bir şey kurmaya gerek yoktur.
+Dosyaları doğrudan okur ve yazar, Claude'a mesaj göndermez: **model token'ı harcamaz**.
+
+**Açmak:** `.claude/gorevler/` klasörü olan bir projede oturum açılınca kendiliğinden açılır. Kapattıysan ya da klasör henüz yoksa:
+```
+/gorev-paneli
+```
+Panel Claude Code'un temasını (açık/koyu) kullanır. Dosyaları saniyede bir yoklar; dosya yoksa, JSON bozuksa ya da yarım yazılmışsa son geçerli durumu göstermeye devam eder.
+
+**Durum sekmesi**
+- Görev ID'si, başlığı ve durum rozeti (Çalışıyor / Tamamlandı / Durduruldu)
+- 8 adımlık liste: biten adım ✓, şu anki adım vurgulu; kararların beklendiği adımda "Senin cevabın bekleniyor" uyarısı
+- "Şu an çalışan" kartı: agent, model/effort, tur ve canlı sayan süre
+- Agent başına tablo (agent, model/effort, tur, süre, token) ve toplam token. Claude Code token bilgisini vermediyse "—" görünür.
+- Aktif görev yoksa: "Aktif görev yok" ve `.claude/gorevler` altındaki son 5 görev
+
+**Modeller sekmesi**
+- Her agent için model (haiku / sonnet / opus) ve effort seçimi; yanında ayarın kaynağı: `varsayılan`, `kullanıcı` ya da `proje`
+- **Benim için** → `~/.claude/dotnet-oracle-ayarlar.json`, **Bu proje** → `<proje>/.claude/dotnet-oracle-ayarlar.local.json` (öncelikli). Yazılacak dosyanın yolu altında görünür.
+- **Ekip varsayılanlarına dön**: seçili dosyadaki agent kayıtlarını siler; dosyadaki diğer alanlara dokunmaz.
+- "Bu proje" ile ilk yazışta `.claude/dotnet-oracle-ayarlar.local.json` satırı yoksa projenin `.gitignore`'una eklenir.
+- Bozuk bir ayar dosyasının üzerine yazılmaz; panel uyarı gösterir. `/ajan-ayarlari` ile aynı dosyaları kullanır.
+
+**Gerçek görev olmadan denemek.** Projenin kök dizininde (plugin yolu, `/plugin` listesindeki kurulum klasörüdür; repo klonunda `plugins/dotnet-oracle`):
+```bash
+node <plugin-yolu>/panel/ornek-gorev.mjs            # .claude/gorevler/TEST-1 + aktif.json oluşturur
+node <plugin-yolu>/panel/ornek-gorev.mjs adim 1     # adımı değiştirir (adim.json'u elle de düzenleyebilirsin)
+node <plugin-yolu>/panel/ornek-gorev.mjs sil        # örnek görevi siler
+```
+Ardından `/gorev-paneli`. `adim.json`'u değiştirdiğinde panel bir saniye içinde güncellenir.
+
+**Gereksinim.** Panel, Claude Code'un mod (function hooks) desteğini kullanır: terminalde ve masaüstü uygulamasının Code sekmesinde çalışır.
+Bu destek erken erişimdedir ve Claude Code'un güncel bir sürümünü gerektirir (2.1.325 ile denendi).
 
 ---
 
