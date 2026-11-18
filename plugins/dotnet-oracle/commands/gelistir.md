@@ -19,6 +19,8 @@ $ARGUMENTS
 - Agent'lar birbirinin konuşmasını görmez; **ortak hafıza görev klasörüdür.** Her agent'a mutlaka görev klasörünün yolunu ver.
 - Her agent çağrısında şunu da hatırlat: "Önce `.claude/proje/INDEX.md`'yi oku, projeyi baştan tarama; standart skill'lerini yükle ve uy."
 - Kullanıcıya her adımda tek satırlık durum bildir ("Analiz bitti, 4 soru var", "Kod yazıldı, build başarılı, testlere geçiyorum").
+- **Agent raporuna körü körüne güvenme.** coder veya db "tamamlandı" dediğinde `git status --short` ile gerçekten dosya değiştiğini kontrol et.
+  Kullanıcıya "build başarılı / testler geçti" derken bunu agent'ın gerçek komut çıktısına dayandır.
 - Kod commit etme, push etme, veritabanında script çalıştırma. Bunlar kullanıcının işi.
 
 ## Adım 0 — Hazırlık
@@ -67,7 +69,10 @@ $ARGUMENTS
 
 ## Adım 6 — Düzeltme döngüsü
 Tur sayacı tut (ilk geliştirme = tur 1).
-1. Bulguların sorumlusuna göre çağır: `db` sorumlu bulgular varsa önce db agent, sonra coder ("review.md son tur ve test-raporu.md son turdaki bulguları düzelt; kapsam dışına çıkma").
+1. Bulguların sorumlusuna göre çağır: `db` sorumlu bulgular varsa önce db agent, sonra coder ("review.md son tur ve test-raporu.md son turdaki bulguları düzelt; önce her bulguyu koda karşı doğrula, yanlış bulguya gerekçeyle itiraz et; hata düzeltirken hata-ayiklama sürecini izle; kapsam dışına çıkma").
+   - coder bir bulgu için **Kullanıcıya sor** derse (bulgu bir kullanıcı kararıyla çelişiyorsa): AskUserQuestion ile sor, cevabı `kararlar.md`'ye ekle ve coder'a ilet.
+   - reviewer bir bulguyu **Anlaşmazlık** olarak işaretlerse (coder itiraz etti, reviewer itirazı kabul etmedi): iki tarafın gerekçesini tek cümleyle özetleyip AskUserQuestion ile kullanıcıya sor
+     ("coder haklı, bulguyu kapat" / "reviewer haklı, düzeltilsin"). Kararı `kararlar.md`'ye yaz. Aynı anlaşmazlık için tur harcama.
 2. Ardından Adım 4 (test) ve Adım 5 (review) tekrar.
 3. **En fazla 3 tur.** 3. turun sonunda hâlâ ENGELLEYİCİ varsa dur; kalan bulguları kullanıcıya listele ve AskUserQuestion ile sor:
    "Bir tur daha dene" / "Kalanları ben düzelteceğim, akışı bitir" / "Bulguyu kabul et ve bitir (gerekçeyi kararlara yaz)".

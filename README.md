@@ -25,6 +25,8 @@ ClaudeSettings/
 │   │   ├── reviewer.md                  ← standartlara göre review
 │   │   └── proje-kesif.md               ← proje haritasını çıkarır/günceller
 │   └── skills/
+│       ├── calisma-ilkeleri/            ← tüm agent'lar: düşün, en küçük tam değişiklik, kanıtla bitir
+│       ├── hata-ayiklama/               ← önce kök neden, sonra düzeltme
 │       ├── csharp-kod-standardi/
 │       ├── dotnet-veri-erisimi/         ← EF Core / Dapper / ADO.NET + Oracle
 │       ├── dotnet-api/
@@ -33,9 +35,10 @@ ClaudeSettings/
 │       ├── oracle-trigger/
 │       ├── oracle-ddl-script/
 │       └── oracle-plsql/
-└── sablonlar/
-    ├── proje-settings.json              ← proje repolarına konacak .claude/settings.json
-    └── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
+├── sablonlar/
+│   ├── proje-settings.json              ← proje repolarına konacak .claude/settings.json
+│   └── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
+└── KAYNAKLAR.md                         ← uyarlanan açık kaynak projeler ve lisansları
 ```
 
 ## Akış: `/gelistir`
@@ -58,6 +61,8 @@ ClaudeSettings/
 5. reviewer ──► standartlara göre review: ONAY / DÜZELTME GEREKLİ
    │
    ├─ DÜZELTME ──► coder (ve/veya db) → tester → reviewer   (en fazla 3 tur)
+   │               coder her bulguyu doğrular, yanlış bulguya gerekçeyle itiraz eder;
+   │               anlaşmazlık olursa karar sana sorulur
    └─ ONAY ──► ozet.md: değişiklikler, script çalıştırma sırası, commit mesajı önerisi
 ```
 

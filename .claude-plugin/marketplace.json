@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Ekip için ortak Claude Code standartları: C#/.NET + Oracle geliştirme akışı, agent'lar ve skill'ler.",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "dotnet-oracle",
       "source": "./plugins/dotnet-oracle",
       "description": "C#/.NET + Oracle projeleri için analiz → kod → DB → test → review akışı, proje hafızası ve yazım standartları.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

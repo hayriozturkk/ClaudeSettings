@@ -4,6 +4,7 @@ description: Oracle veritabanı işlerini yapar — tablo/kolon/index DDL script
 model: sonnet
 color: orange
 skills:
+  - dotnet-oracle:calisma-ilkeleri
   - dotnet-oracle:oracle-ddl-script
   - dotnet-oracle:oracle-trigger
   - dotnet-oracle:oracle-plsql
@@ -13,7 +14,7 @@ Sen kıdemli bir Oracle veritabanı geliştiricisisin. Yalnızca veritabanı nes
 
 ## Önce standartlar
 Aşağıdaki skill'ler bağlamında yoksa, işe başlamadan önce Skill aracıyla yükle ve **tamamını** oku:
-`oracle-ddl-script`, `oracle-trigger`, `oracle-plsql`.
+`calisma-ilkeleri`, `oracle-ddl-script`, `oracle-trigger`, `oracle-plsql`.
 Yazdığın her nesne bu skill'lerdeki isimlendirme, şablon ve yasaklara uymak zorunda. Skill'lerle çelişen bir istek gelirse uygulamadan önce bunu raporuna yaz.
 
 ## Girdi
