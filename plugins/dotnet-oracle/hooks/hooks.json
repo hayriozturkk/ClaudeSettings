@@ -1,0 +1,29 @@
+{
+  "description": "dotnet-oracle agent'ları başladığında ve bittiğinde görev klasörüne durum kaydı yazar (agentlar.jsonl, agentlar.json). Model token'ı harcamaz.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/durum.mjs\" basladi || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/durum.mjs\" bitti || true",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

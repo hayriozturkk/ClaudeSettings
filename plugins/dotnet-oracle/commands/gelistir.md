@@ -23,12 +23,52 @@ $ARGUMENTS
   Kullanıcıya "build başarılı / testler geçti" derken bunu agent'ın gerçek komut çıktısına dayandır.
 - Kod commit etme, push etme, veritabanında script çalıştırma. Bunlar kullanıcının işi.
 
+## Agent çağırma: model seçimi
+Ekibin varsayılan modeli her agent dosyasında yazılıdır. Kullanıcı kendi makinesinde bunu değiştirebilir (`/ajan-ayarlari`).
+**Her agent çağrısından hemen önce** şu iki dosyayı oku (yoksa yok say; küçük dosyalardır):
+1. `.claude/dotnet-oracle-ayarlar.local.json` (proje ayarı — önceliklidir)
+2. `~/.claude/dotnet-oracle-ayarlar.json` (kullanıcı ayarı)
+
+Çağıracağın agent için `agentlar.<agent>.model` ve `agentlar.<agent>.effort` değerlerine bak; alan bazında önce proje, sonra kullanıcı dosyası geçerlidir.
+- Bir değer bulduysan agent aracını çağırırken onu parametre olarak ver: `model` her zaman; `effort` ise araç bu parametreyi kabul ediyorsa.
+- Değer yoksa parametre verme; agent dosyasındaki ekip varsayılanı geçerli olur.
+
+Dosyalar her çağrıdan önce okunduğu için kullanıcının akış sırasında yaptığı değişiklik bir sonraki agent çağrısında geçerli olur.
+Adım 0'ın sonunda, yerel ayarla değiştirilmiş agent'ları kullanıcıya tek satırla bildir (örn. "Yerel ayar: coder → sonnet").
+
+## Durum kaydı
+Akışın hangi adımda olduğu dosyalara yazılır; bir panel veya `/durum` komutu bunları okur. Agent'ların başlama/bitiş zamanı, modeli ve token kullanımı
+plugin'in hook'u tarafından otomatik kaydedilir (`agentlar.json`); sen yalnızca **adım** bilgisini yazarsın:
+
+- Adım 0'da `.claude/gorevler/aktif.json` dosyasını yaz: `{"gorev": "<ID>", "baslik": "<task'ın ilk satırı, en fazla 80 karakter>", "baslangic": "<ISO zaman>", "durum": "calisiyor"}`
+- Her adıma girerken ve kullanıcıdan cevap beklemeye başlarken görev klasöründeki `adim.json` dosyasının **tamamını** yeniden yaz:
+  ```json
+  {"adim": 3, "ad": "Kod", "tur": 1, "bekleyen": null, "guncelleme": "<ISO zaman>"}
+  ```
+  | adim | ad |
+  |---|---|
+  | 0 | Hazırlık |
+  | 1 | Analiz / Kararlar bekleniyor |
+  | 2 | Veritabanı |
+  | 3 | Kod |
+  | 4 | Test |
+  | 5 | Review |
+  | 6 | Düzeltme |
+  | 7 | Kapanış / Tamamlandı |
+
+  `adim` ve `ad` bu tablodan gelir (adım numaraları bu dosyadaki "Adım N" başlıklarıyla aynıdır).
+  `bekleyen`: kullanıcıdan cevap beklerken `"kullanici"`, aksi halde `null`. `tur`: düzeltme döngüsündeki tur numarası (ilk geliştirme = 1).
+- Agent'lara görev klasörünü her zaman `.claude/gorevler/<ID>/` biçiminde yaz; hook görevi bu yoldan tanır.
+- Bu dosyaları yazmak kısa tut: içeriği tek satır JSON olarak yaz, dosyayı geri okuma.
+
 ## Adım 0 — Hazırlık
 1. `.claude/proje/INDEX.md` yoksa kullanıcıya söyle ve sor: "Bu proje henüz öğrenilmemiş. Önce /proje-ogren çalıştırılsın mı? (Önerilen: her task'ta keşif maliyetini önler)".
    Evet derse `proje-kesif` agent'ını `mod: tam` ile çalıştır, sonra devam et.
 2. `.claude/proje/_meta.md` içindeki commit ile `git rev-parse HEAD` arasında 30'dan fazla commit varsa, kullanıcıya `/proje-guncelle` önerisini tek satırla bildir (akışı durdurma).
 3. Görev ID'sini belirle: task "ABC-123:" gibi bir ön ekle başlıyorsa onu kullan, yoksa `YYYYMMDD-kisa-baslik` üret.
 4. `.claude/gorevler/<ID>/` klasörünü oluştur ve task içeriğini **değiştirmeden** `task.md` dosyasına yaz.
+5. `aktif.json` ve `adim.json` (adim 0) dosyalarını yaz (bkz. "Durum kaydı").
+6. Model ayarlarını oku ve yerel ayar varsa kullanıcıya tek satırla bildir (bkz. "Agent çağırma: model seçimi").
 
 ## Adım 1 — Analiz ve kararlar
 1. `analyst` agent'ını (dotnet-oracle:analyst) görev klasörü yoluyla çağır.
@@ -84,7 +124,9 @@ Tur sayacı tut (ilk geliştirme = tur 1).
    - Manuel test adımları (test-raporu.md'den)
    - Açık kalan ÖNERİ'ler
    - Önerilen commit mesajı (Türkçe, tek satır başlık + kısa gövde)
-2. Kullanıcıya özeti kısa göster; `ozet.md` yolunu ver.
-3. Değişiklik yeni bir proje, yeni bir tablo/trigger/package veya yeni bir endpoint grubu ekliyorsa:
+2. `adim.json`'u `{"adim": 7, "ad": "Tamamlandı", ...}` olarak, `aktif.json`'u `"durum": "tamamlandi"` olarak güncelle.
+   Akış kullanıcı kararıyla erken biterse `"ad": "Durduruldu"` ve `"durum": "durduruldu"` yaz.
+3. Kullanıcıya özeti kısa göster; `ozet.md` yolunu ver.
+4. Değişiklik yeni bir proje, yeni bir tablo/trigger/package veya yeni bir endpoint grubu ekliyorsa:
    "Proje haritası güncellensin mi?" diye sor; evet derse `proje-kesif` agent'ını `mod: guncelle` ile çağır
    (commit edilmemiş değişiklikleri de `git diff HEAD` ile hesaba katmasını söyle).

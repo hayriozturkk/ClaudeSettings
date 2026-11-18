@@ -18,5 +18,6 @@ description: Projeyi bir kez tarar ve kalıcı proje haritasını (.claude/proje
      @.claude/proje/INDEX.md
      ```
 4. `.gitignore` içinde `.claude/gorevler/` yoksa kullanıcıya sor: "Görev klasörleri (analiz, kararlar, raporlar) repoya girmesin mi?"
-   Evet derse `.gitignore`'a ekle. `.claude/proje/` klasörü ise **repoya girmeli** (ekipteki herkes aynı haritayı kullanır); onu ignore etme.
+   Evet derse `.gitignore`'a ekle. Her durumda `.claude/dotnet-oracle-ayarlar.local.json` satırını da ekle (kişisel model ayarı repoya girmez).
+   `.claude/proje/` klasörü ise **repoya girmeli** (ekipteki herkes aynı haritayı kullanır); onu ignore etme.
 5. Kullanıcıya kısa özet ver: oluşan dosyalar, INDEX.md satır sayısı ve haritayı commit etmesi gerektiği.

@@ -1,0 +1,10 @@
+{
+  "agentlar": {
+    "analyst":     { "model": "opus",   "effort": "high" },
+    "db":          { "model": "sonnet", "effort": "high" },
+    "coder":       { "model": "sonnet", "effort": "medium" },
+    "tester":      { "model": "sonnet", "effort": "medium" },
+    "reviewer":    { "model": "opus",   "effort": "high" },
+    "proje-kesif": { "model": "sonnet", "effort": "medium" }
+  }
+}

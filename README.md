@@ -16,7 +16,12 @@ ClaudeSettings/
 │   ├── commands/
 │   │   ├── gelistir.md                  ← /gelistir: uçtan uca geliştirme akışı
 │   │   ├── proje-ogren.md               ← /proje-ogren: projeyi bir kez öğren
-│   │   └── proje-guncelle.md            ← /proje-guncelle: hafızayı güncelle
+│   │   ├── proje-guncelle.md            ← /proje-guncelle: hafızayı güncelle
+│   │   ├── ajan-ayarlari.md             ← /ajan-ayarlari: agent modellerini kendin seç
+│   │   └── durum.md                     ← /durum: görev hangi adımda, hangi agent çalışıyor
+│   ├── hooks/
+│   │   ├── hooks.json                   ← agent başlayınca/bitince durum kaydı
+│   │   └── durum.mjs                    ← kaydı yazan script (Node.js, model token'ı harcamaz)
 │   ├── agents/
 │   │   ├── analyst.md                   ← task'ı yorumlar, karar sorularını çıkarır
 │   │   ├── db.md                        ← Oracle: DDL, trigger, PL/SQL
@@ -37,7 +42,8 @@ ClaudeSettings/
 │       └── oracle-plsql/
 └── sablonlar/
     ├── proje-settings.json              ← proje repolarına konacak .claude/settings.json
-    └── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
+    ├── proje-CLAUDE.md                  ← proje repolarına konacak CLAUDE.md örneği
+    └── dotnet-oracle-ayarlar.ornek.json ← kişisel model ayarı örneği
 ```
 
 ## Akış: `/gelistir`
@@ -72,7 +78,12 @@ Agent'lar birbirinin konuşmasını görmez; ortak hafızaları görev klasörü
 ├── task.md  analiz.md  kararlar.md
 ├── db-degisiklikleri.md  degisiklikler.md
 ├── test-raporu.md  review.md
-└── ozet.md
+├── ozet.md
+├── adim.json        ← şu anki adım ve tur (/gelistir yazar)
+├── agentlar.jsonl   ← agent başlama/bitiş kayıtları (hook yazar)
+└── agentlar.json    ← özet: çalışan agent, model, süre, token (hook yazar)
+
+<proje>/.claude/gorevler/aktif.json   ← şu an yürüyen görev
 ```
 
 Claude commit, push yapmaz ve veritabanında script çalıştırmaz; bunlar sende kalır.
@@ -91,6 +102,41 @@ Her task'ta projeyi baştan keşfedip token harcamamak için proje **bir kez** �
 - `/proje-ogren` haritayı oluşturur ve projenin `CLAUDE.md`'sine `@.claude/proje/INDEX.md` satırını ekler. Böylece harita her oturumda ve her agent'ta hazır olur.
 - `/proje-guncelle` yalnızca son taramadan bu yana değişen kısımları günceller.
 - `.claude/proje/` repoya commit edilir; ekipte herkes aynı haritayı kullanır.
+
+## Agent modelleri: varsayılan repoda, seçim sende
+
+Her agent'ın ekip varsayılanı, agent dosyasının başındaki `model:` ve `effort:` satırlarındadır.
+`model` agent'ın ne kadar güçlü olduğunu, `effort` (`low`, `medium`, `high`, `xhigh`, `max`) aynı modelin ne kadar uzun ve dikkatli düşüneceğini belirler.
+
+| Agent | model | effort | Neden |
+|---|---|---|---|
+| analyst | opus | high | Kararlar ve sorular bütün akışı belirliyor |
+| reviewer | opus | high | Son kalite kapısı |
+| coder | opus | medium | Çok katmanlı değişikliklerde ve uzun standartlara uymada güçlü; en çok token burada harcanır |
+| db | sonnet | high | Az kod üretir ama veri riski yüksek |
+| tester | sonnet | medium | Orta zorlukta iş |
+| proje-kesif | sonnet | medium | Seyrek çalışır |
+
+Repoyu indiren herkes, hiçbir dosyayı değiştirmeden kendi seçimini yapabilir:
+```
+/ajan-ayarlari                      ← geçerli ayarları gösterir
+/ajan-ayarlari coder sonnet         ← senin makinende coder sonnet ile çalışır
+/ajan-ayarlari reviewer effort max
+/ajan-ayarlari coder sonnet --proje ← yalnızca bu projede
+/ajan-ayarlari sifirla coder        ← ekip varsayılanına dön
+```
+Ayarlar `~/.claude/dotnet-oracle-ayarlar.json` (kullanıcı) ve `<proje>/.claude/dotnet-oracle-ayarlar.local.json` (proje, repoya girmez) dosyalarına yazılır;
+dosyaları elle de düzenleyebilirsin (örnek: `sablonlar/dotnet-oracle-ayarlar.ornek.json`). `/gelistir` her agent'ı çağırmadan önce bu dosyalara baktığı için
+akış sürerken yapılan değişiklik bir sonraki agent çağrısında geçerli olur. Ekibin varsayılanını değiştirmek için agent dosyasını repoda değiştir.
+
+Ayarı değerlendirmek için birkaç görevden sonra `/durum` ile agent başına token'a ve `review.md`'lerdeki tur sayılarına bakın:
+görevler çoğunlukla 1. turda ONAY alıyorsa coder `sonnet`'e düşürülebilir; sık sık 3. tura gidiliyorsa coder'ın `effort`'u yükseltilebilir.
+
+## Durum takibi: `/durum`
+
+`/durum` aktif görevin hangi adımda olduğunu, şu an hangi agent'ın hangi modelle çalıştığını ve her agent'ın harcadığı token'ı gösterir.
+Bilgiler görev klasöründeki `adim.json` ve `agentlar.json` dosyalarından okunur; ileride Claude Code'da sohbetin yanında duran bir panel de aynı dosyaları okuyabilir.
+Agent kayıtlarını plugin'in hook'u tutar ve model token'ı harcamaz.
 
 ---
 
@@ -139,17 +185,4 @@ claude --plugin-dir ./plugins/dotnet-oracle
 ## Notlar
 - Skill'ler **başlangıç standardıdır**; ekibin kendi kararlarıyla doldurulması gerekir (özellikle isimlendirme, hata kodu aralıkları, script klasör düzeni).
 - Bir projede standarttan farklı, yerleşik bir desen varsa agent'lar projeninkini izler ve sapmayı not eder. Bu farklar proje haritasındaki "Projeye özgü kurallar" bölümünde tutulur.
-- Agent modelleri ve dikkat seviyeleri agent dosyalarının başındaki `model:` ve `effort:` alanlarından değiştirilir.
-  `model` agent'ın ne kadar güçlü olduğunu, `effort` (`low`, `medium`, `high`, `xhigh`, `max`) aynı modelin ne kadar uzun ve dikkatli düşüneceğini belirler.
-
-  | Agent | model | effort | Neden |
-  |---|---|---|---|
-  | analyst | opus | high | Kararlar ve sorular bütün akışı belirliyor |
-  | reviewer | opus | high | Son kalite kapısı |
-  | coder | opus | medium | Çok katmanlı değişikliklerde ve uzun standartlara uymada güçlü; en çok token burada harcanır |
-  | db | sonnet | high | Az kod üretir ama veri riski yüksek |
-  | tester | sonnet | medium | Orta zorlukta iş |
-  | proje-kesif | sonnet | medium | Seyrek çalışır |
-
-  Ayarı değerlendirmek için birkaç görevden sonra `review.md` dosyalarındaki tur sayılarına bakın: görevler çoğunlukla 1. turda ONAY alıyorsa
-  coder `sonnet`'e düşürülebilir; sık sık 3. tura gidiliyorsa coder'ın `effort`'u yükseltilebilir.
+- Agent kayıtları (`agentlar.json`, `/durum`'daki model/süre/token bilgisi) için makinede **Node.js 18+** gerekir. Node yoksa akış ve model seçimi yine çalışır, yalnızca agent kayıtları tutulmaz.
